@@ -255,7 +255,7 @@
 		const { start, stop } = sizeAndPositionManager.getVisibleRange(
 			containerSize,
 			offset,
-			overscanCount,
+			mode === WRAPPER_MODE.TABLE ? overscanCount * 2 : overscanCount,
 		);
 		
 		let updatedItems = [];
@@ -264,7 +264,7 @@
 		if (scrollDirection === DIRECTION.VERTICAL) {
 			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width};`;
 			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `height:${totalSize}px;width:100%;`;
+				innerStyle = `width:100%;position:relative;`;
 			} else {
 				innerStyle = `flex-direction:column;height:${totalSize}px;`;
 			}
@@ -347,14 +347,17 @@
 	function handleScroll(event) {
 		const offset = getWrapperOffset();
 		if (state.offset === offset || (event.target !== scrollWrapper && event.target !== document)) return;
-		state = {
-			offset,
-			scrollChangeReason: SCROLL_CHANGE_REASON.OBSERVED,
-		};
+		
+		requestAnimationFrame(() => {
+			state = {
+				offset,
+				scrollChangeReason: SCROLL_CHANGE_REASON.OBSERVED,
+			};
 
-		dispatchEvent('afterScroll', {
-			offset,
-			event,
+			dispatchEvent('afterScroll', {
+				offset,
+				event,
+			});
 		});
 	}
 
@@ -486,8 +489,8 @@
 				<slot name="header-row" />
 			</thead>
 			<tbody>
-				<!-- Add spacer row at the top -->
-				<tr class="virtual-list-spacer" style="height:{state.offset}px" />
+				<!-- Top spacer with explicit inline style to override the class -->
+				<tr style="height:{state.offset}px !important; min-height:{state.offset}px !important;" />
 				
 				{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
 					<slot 
@@ -507,8 +510,8 @@
 					{/if}
 				{/each}
 
-				<!-- Add spacer row at the bottom -->
-				<tr class="virtual-list-spacer" style="height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px" />
+				<!-- Bottom spacer with explicit inline style -->
+				<tr style="height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important; min-height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important;" />
 			</tbody>
 		</table>
 	{/if}
@@ -532,11 +535,13 @@
 		table-layout: fixed;
 		margin: 0;
 		padding: 0;
+		position: relative;
 	}
 
 	:global(.virtual-list-container) {
 		position: relative !important;
 		overflow: auto !important;
+		-webkit-overflow-scrolling: touch !important;
 	}
 
 	:global(.virtual-list-spacer) {
@@ -553,5 +558,6 @@
 	table.virtual-list-inner :global(tr) {
 		margin: 0;
 		padding: 0;
+		position: relative;
 	}
 </style>
