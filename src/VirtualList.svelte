@@ -88,6 +88,8 @@
 	let wrapperStyle = '';
 	let innerStyle = '';
 
+	let containerSize = 0;
+
 	$: {
 		/* listen to updates: */ scrollToIndex, scrollToAlignment, scrollOffset, itemCount, itemSize, expandItems, expandItemSize, estimatedItemSize, estimatedExpandItemSize, container;
 		propsUpdated();
@@ -247,22 +249,32 @@
 
 	function refresh() {
 		const { offset } = state;
-
-		const containerSize = getVisibleHeight(scrollWrapper === document.body ? wrapper : scrollWrapper);
+		
+		containerSize = getVisibleHeight(scrollWrapper === document.body ? wrapper : scrollWrapper);
 		
 		const { start, stop } = sizeAndPositionManager.getVisibleRange(
-			Number(containerSize),
+			containerSize,
 			offset,
 			overscanCount,
 		);
+		
 		let updatedItems = [];
 		const totalSize = sizeAndPositionManager.getTotalSize();
+		
 		if (scrollDirection === DIRECTION.VERTICAL) {
 			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width};`;
-			innerStyle = `flex-direction:column;height:${totalSize}px;`;
+			if (mode === WRAPPER_MODE.TABLE) {
+				innerStyle = `height:${totalSize}px;width:100%;`;
+			} else {
+				innerStyle = `flex-direction:column;height:${totalSize}px;`;
+			}
 		} else {
 			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}px;`;
-			innerStyle = `min-height:100%;width:${totalSize}px;`;
+			if (mode === WRAPPER_MODE.TABLE) {
+				innerStyle = `width:${totalSize}px;`;
+			} else {
+				innerStyle = `min-height:100%;width:${totalSize}px;`;
+			}
 		}
 
 		const hasStickyIndices = stickyIndices != null && stickyIndices.length !== 0;
@@ -392,8 +404,8 @@
 		let style, expandStyle;
 
 		if (mode === WRAPPER_MODE.TABLE) {
-			style = `height:${size}px;transform:translateY(${offset}px);`;
-			expandStyle = `height:${expandSize}px;transform:translateY(${expandOffset}px);`;
+			style = `height:${size}px;`;
+			expandStyle = `height:${expandSize}px;`;
 
 			if (sticky) {
 				style += `position:sticky;z-index:1;top:0;`;
@@ -474,6 +486,9 @@
 				<slot name="header-row" />
 			</thead>
 			<tbody>
+				<!-- Add spacer row at the top -->
+				<tr class="virtual-list-spacer" style="height:{state.offset}px" />
+				
 				{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
 					<slot 
 						name="item" 
@@ -491,6 +506,9 @@
 						/>
 					{/if}
 				{/each}
+
+				<!-- Add spacer row at the bottom -->
+				<tr class="virtual-list-spacer" style="height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px" />
 			</tbody>
 		</table>
 	{/if}
@@ -509,14 +527,31 @@
 		width: 100%;
 	}
 
-	/* Add specific styles for table mode */
 	table.virtual-list-inner {
 		border-collapse: collapse;
 		table-layout: fixed;
+		margin: 0;
+		padding: 0;
 	}
 
 	:global(.virtual-list-container) {
 		position: relative !important;
 		overflow: auto !important;
+	}
+
+	:global(.virtual-list-spacer) {
+		padding: 0 !important;
+		border: none !important;
+		height: 0 !important;
+		line-height: 0 !important;
+	}
+
+	table.virtual-list-inner :global(td) {
+		box-sizing: border-box;
+	}
+
+	table.virtual-list-inner :global(tr) {
+		margin: 0;
+		padding: 0;
 	}
 </style>
