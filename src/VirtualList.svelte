@@ -459,16 +459,28 @@
 		</div>
 	{:else}
 		<table class="virtual-list-inner" style={innerStyle}>
-			{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
-				<tr style={item.style.style} class={expandItems[item.index] ? "active" : ""}>
-					<slot name="item" item={items[item.index]} index={item.index} style="height: 100%;" />
-				</tr>
-				{#if expandItems[item.index]}
-					<tr style={item.style.expandStyle}>
-						<slot name="expandItem" item={items[item.index]} index={item.index} style="height: 100%; overflow: hidden;" />
-					</tr>
-				{/if}
-			{/each}
+			<thead>
+				<slot name="header-row" />
+			</thead>
+			<tbody>
+				{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
+					<slot 
+						name="item" 
+						item={items[item.index]} 
+						index={item.index}
+						style={item.style.style}
+						class={expandItems[item.index] ? "active" : ""}
+					/>
+					{#if expandItems[item.index]}
+						<slot 
+							name="expandItem" 
+							item={items[item.index]} 
+							index={item.index}
+							style={item.style.expandStyle}
+						/>
+					{/if}
+				{/each}
+			</tbody>
 		</table>
 	{/if}
 
