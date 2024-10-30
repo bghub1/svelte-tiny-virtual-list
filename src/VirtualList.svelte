@@ -18,7 +18,7 @@
 	type T = $$Generic;
 
 	export let container: string = null;
-	export let test: string = 'test2';
+	export let test: string = 'test3';
 
 	export let height: number | string = '';
 	export let width: number | string = '100%';
