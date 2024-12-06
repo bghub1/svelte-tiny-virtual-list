@@ -266,11 +266,25 @@
 		const isVisibleScroll = overflowXMode === 'visible' && overflowYMode === 'scroll';
 		
 		if (scrollDirection === DIRECTION.VERTICAL) {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width};${isVisibleScroll ? 'position:relative;' : ''}`;
+			wrapperStyle = `
+				height:${height ? height + 'px' : '100%'};
+				width:${width};
+				${isVisibleScroll ? 'position:relative;' : ''}
+			`;
+			
 			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `width:${isVisibleScroll ? 'auto' : '100%'};position:relative;`;
+				innerStyle = `
+					position:relative;
+					width:${isVisibleScroll ? 'max-content' : '100%'};
+					min-width:100%;
+				`;
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;${isVisibleScroll ? 'min-width:fit-content;width:auto;' : ''}`;
+				innerStyle = `
+					position:relative;
+					flex-direction:column;
+					height:${totalSize}px;
+					${isVisibleScroll ? 'width:max-content;min-width:100%;' : ''}
+				`;
 			}
 		} else {
 			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}px;${isVisibleScroll ? 'position:relative;' : ''}`;
@@ -474,7 +488,7 @@
 <div 
 	bind:this={wrapper} 
 	class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode} {overflowXMode === 'visible' && overflowYMode === 'scroll' ? 'virtual-list-wrapper-visible-x' : ''}" 
-	style={wrapperStyle}
+	style="{wrapperStyle} {overflowXMode === 'visible' && overflowYMode === 'scroll' ? 'position: relative; contain: style layout;' : ''}"
 >
 	<slot name="header" />
 
@@ -553,14 +567,19 @@
 	}
 
 	:global(.virtual-list-wrapper-visible-x) {
-		contain: none !important;
-		overflow: unset !important;
+		contain: style layout !important;
+		overflow: visible !important;
 		overflow-y: scroll !important;
 	}
 
 	:global(.virtual-list-wrapper-visible-x .virtual-list-inner) {
-		min-width: fit-content;
-		width: auto !important;
+		width: max-content !important;
+		min-width: 100% !important;
+		position: relative !important;
+	}
+
+	:global(.virtual-list-wrapper-visible-x > *) {
+		position: relative !important;
 	}
 
 	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-x-scroll) {
