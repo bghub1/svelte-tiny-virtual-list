@@ -31,7 +31,8 @@
 	export let stickyIndices: number[] = null;
 	export let getKey: (index: number) => any = null;
 	
-	export let overflowMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
+	export let overflowYMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
+	export let overflowXMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
 	export let scrollDirection: Direction = 'vertical';
 	export let scrollOffset: number = null;
 	export let scrollToIndex: number = null;
@@ -468,7 +469,7 @@
 	}
 </script>
 
-<div bind:this={wrapper} class="virtual-list-wrapper overflow-{overflowMode}" style={wrapperStyle}>
+<div bind:this={wrapper} class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode}" style={wrapperStyle}>
 	<slot name="header" />
 
 	{#if mode === WRAPPER_MODE.DIV}
@@ -543,17 +544,29 @@
 		position: relative !important;
 		-webkit-overflow-scrolling: touch !important;
 	}
-	:global(.virtual-list-container.overflow-scroll) {
-		overflow: scroll !important;
+	:global(.virtual-list-container.overflow-x-scroll) {
+		overflow-x: scroll !important;
 	}
-	:global(.virtual-list-container.overflow-auto) {
-		overflow: auto !important;
+	:global(.virtual-list-container.overflow-x-auto) {
+		overflow-x: auto !important;
 	}
-	:global(.virtual-list-container.overflow-hidden) {
-		overflow: hidden !important;
+	:global(.virtual-list-container.overflow-x-hidden) {
+		overflow-x: hidden !important;
 	}
-	:global(.virtual-list-container.overflow-visible) {
-		overflow: visible !important;
+	:global(.virtual-list-container.overflow-x-visible) {
+		overflow-x: visible !important;
+	}
+	:global(.virtual-list-container.overflow-y-scroll) {
+		overflow-y: scroll !important;
+	}
+	:global(.virtual-list-container.overflow-y-auto) {
+		overflow-y: auto !important;
+	}
+	:global(.virtual-list-container.overflow-y-hidden) {
+		overflow-y: hidden !important;
+	}
+	:global(.virtual-list-container.overflow-y-visible) {
+		overflow-y: visible !important;
 	}
 
 	:global(.virtual-list-spacer) {
