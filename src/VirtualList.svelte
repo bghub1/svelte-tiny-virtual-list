@@ -543,29 +543,30 @@
 	:global(.virtual-list-container) {
 		position: relative !important;
 		-webkit-overflow-scrolling: touch !important;
+		overflow: auto !important;
 	}
-	:global(.virtual-list-container.overflow-x-scroll) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-x-scroll) {
 		overflow-x: scroll !important;
 	}
-	:global(.virtual-list-container.overflow-x-auto) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-x-auto) {
 		overflow-x: auto !important;
 	}
-	:global(.virtual-list-container.overflow-x-hidden) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-x-hidden) {
 		overflow-x: hidden !important;
 	}
-	:global(.virtual-list-container.overflow-x-visible) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-x-visible) {
 		overflow-x: visible !important;
 	}
-	:global(.virtual-list-container.overflow-y-scroll) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-y-scroll) {
 		overflow-y: scroll !important;
 	}
-	:global(.virtual-list-container.overflow-y-auto) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-y-auto) {
 		overflow-y: auto !important;
 	}
-	:global(.virtual-list-container.overflow-y-hidden) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-y-hidden) {
 		overflow-y: hidden !important;
 	}
-	:global(.virtual-list-container.overflow-y-visible) {
+	:global(.virtual-list-wrapper:not(.virtual-list-container).overflow-y-visible) {
 		overflow-y: visible !important;
 	}
 
