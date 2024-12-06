@@ -31,8 +31,7 @@
 	export let stickyIndices: number[] = null;
 	export let getKey: (index: number) => any = null;
 	
-	export let overflowYMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
-	export let overflowXMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
+	export let overflowMode: "visible" | "hidden" | "auto" | "scroll" = "auto";
 	export let scrollDirection: Direction = 'vertical';
 	export let scrollOffset: number = null;
 	export let scrollToIndex: number = null;
@@ -263,35 +262,19 @@
 		let updatedItems = [];
 		const totalSize = sizeAndPositionManager.getTotalSize();
 		
-		const isVisibleScroll = overflowXMode === 'visible' && overflowYMode === 'scroll';
-		
 		if (scrollDirection === DIRECTION.VERTICAL) {
-			wrapperStyle = `
-				height:${height ? height + 'px' : '100%'};
-				width:${width};
-				${isVisibleScroll ? 'position:relative;' : ''}
-			`;
-			
+			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width};`;
 			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `
-					position:relative;
-					width:${isVisibleScroll ? 'max-content' : '100%'};
-					min-width:100%;
-				`;
+				innerStyle = `width:100%;position:relative;`;
 			} else {
-				innerStyle = `
-					position:relative;
-					flex-direction:column;
-					height:${totalSize}px;
-					${isVisibleScroll ? 'width:max-content;min-width:100%;' : ''}
-				`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;`;
 			}
 		} else {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}px;${isVisibleScroll ? 'position:relative;' : ''}`;
+			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}px;`;
 			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `width:${totalSize}px;${isVisibleScroll ? 'min-width:fit-content;' : ''}`;
+				innerStyle = `width:${totalSize}px;`;
 			} else {
-				innerStyle = `min-height:100%;width:${totalSize}px;${isVisibleScroll ? 'min-width:fit-content;' : ''}`;
+				innerStyle = `min-height:100%;width:${totalSize}px;`;
 			}
 		}
 
@@ -485,11 +468,7 @@
 	}
 </script>
 
-<div 
-	bind:this={wrapper} 
-	class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode} {overflowXMode === 'visible' && overflowYMode === 'scroll' ? 'virtual-list-wrapper-visible-x' : ''}" 
-	style="{wrapperStyle} {overflowXMode === 'visible' && overflowYMode === 'scroll' ? 'position: relative; contain: style layout;' : ''}"
->
+<div bind:this={wrapper} class="virtual-list-wrapper overflow-{overflowMode}" style={wrapperStyle}>
 	<slot name="header" />
 
 	{#if mode === WRAPPER_MODE.DIV}
@@ -565,55 +544,6 @@
 		-webkit-overflow-scrolling: touch !important;
 		overflow: auto !important;
 	}
-
-	:global(.virtual-list-wrapper-visible-x) {
-		contain: style layout !important;
-		overflow: visible !important;
-		overflow-y: scroll !important;
-	}
-
-	:global(.virtual-list-wrapper-visible-x .virtual-list-inner) {
-		width: max-content !important;
-		min-width: 100% !important;
-		position: relative !important;
-	}
-
-	:global(.virtual-list-wrapper-visible-x > *) {
-		position: relative !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-x-scroll) {
-		overflow-x: scroll !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-x-auto) {
-		overflow-x: auto !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-x-hidden) {
-		overflow-x: hidden !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-x-visible) {
-		overflow-x: visible !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-y-scroll) {
-		overflow-y: scroll !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-y-auto) {
-		overflow-y: auto !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-y-hidden) {
-		overflow-y: hidden !important;
-	}
-
-	:global(.virtual-list-wrapper:not(.virtual-list-container):not(.virtual-list-wrapper-visible-x).overflow-y-visible) {
-		overflow-y: visible !important;
-	}
-
 	:global(.virtual-list-spacer) {
 		padding: 0 !important;
 		border: none !important;
