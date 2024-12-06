@@ -264,14 +264,14 @@
 		const totalSize = sizeAndPositionManager.getTotalSize();
 		
 		if (scrollDirection === DIRECTION.VERTICAL) {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width};`;
+			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:100%;position:relative;`;
 			} else {
 				innerStyle = `flex-direction:column;height:${totalSize}px;`;
 			}
 		} else {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}px;`;
+			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:${totalSize}px;`;
 			} else {
