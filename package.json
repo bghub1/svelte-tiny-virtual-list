@@ -1,6 +1,6 @@
 {
   "name": "svelte-tiny-virtual-list",
-  "version": "2.0.9",
+  "version": "2.1.0",
   "description": "A tiny but mighty list virtualization component for svelte, with zero dependencies 💪",
   "svelte": "src/VirtualList.svelte",
   "main": "src/VirtualList.svelte",
