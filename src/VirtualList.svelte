@@ -216,7 +216,7 @@
 		} else {
 			if ((scrollDirection === DIRECTION.VERTICAL && height) || (scrollDirection === DIRECTION.HORIZONTAL && width)) {
 				scrollWrapper = wrapper;
-				scrollWrapper.style.setProperty("overflow", "auto", "important");
+				//scrollWrapper.style.setProperty("overflow", "auto", "important");
 			} else {
 				scrollWrapper = document.querySelector("body");
 			}
