@@ -17,7 +17,7 @@
 	type ItemSize = number | number[] | ItemSizeGetter;
 	type T = $$Generic;
 
-	export let container: string = null;
+	export let container: HTMLElement | "self" = null;
 
 	export let height: number | string = '';
 	export let width: number | string = '100%';
@@ -207,8 +207,10 @@
 			}
 		}
 		
-		if (container) {
-			scrollWrapper = document.querySelector(container);
+		if (container && typeof container === 'object' && 'nodeType' in container) {
+			scrollWrapper = container;
+		} else if (container === "self") {
+			scrollWrapper = wrapper;
 		}
 		
 		if (scrollWrapper) {
