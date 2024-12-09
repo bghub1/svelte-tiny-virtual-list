@@ -273,7 +273,7 @@
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:100%;position:relative;`;
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;position:relative;`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
 			}
 		} else {
 			const heightUnit = typeof height === 'number' ? 'px' : '';
@@ -283,7 +283,7 @@
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:${totalSize}px;`;
 			} else {
-				innerStyle = `min-height:100%;width:${totalSize}px;${height ? 'position:absolute;' : ''}`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
 			}
 		}
 
@@ -355,17 +355,19 @@
 	}
 
 	function handleScroll(event) {
-		const offset = getWrapperOffset();
-		if (state.offset === offset || (event.target !== scrollWrapper && event.target !== document)) return;
+		if (event.target !== scrollWrapper && event.target !== document) return;
+		
+		const currentOffset = getWrapperOffset();
+		if (state.offset === currentOffset) return;
 		
 		requestAnimationFrame(() => {
 			state = {
-				offset,
+				offset: currentOffset,
 				scrollChangeReason: SCROLL_CHANGE_REASON.OBSERVED,
 			};
 
 			dispatchEvent('afterScroll', {
-				offset,
+				offset: currentOffset,
 				event,
 			});
 		});
@@ -384,14 +386,20 @@
 	}
 
 	function getWrapperOffset() {
-		if ('scroll' in scrollWrapper) {
-			if (scrollWrapper === document.body) {
-				return document.documentElement.scrollTop - getDistanceToParent(wrapper, scrollWrapper) - headerHeight;
-			}
-			return scrollWrapper.scrollTop - getDistanceToParent(wrapper, scrollWrapper) - headerHeight;
-		} else {
-			return scrollWrapper[SCROLL_PROP_LEGACY[scrollDirection]];
+		if (!scrollWrapper) return 0;
+		
+		if (scrollWrapper === document.body) {
+			const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+			const wrapperTop = wrapper ? wrapper.getBoundingClientRect().top + scrollTop : 0;
+			return scrollTop - wrapperTop - headerHeight;
 		}
+		
+		const scrollTop = scrollDirection === DIRECTION.VERTICAL ? 
+			scrollWrapper.scrollTop : 
+			scrollWrapper.scrollLeft;
+		
+		const wrapperTop = getDistanceToParent(wrapper, scrollWrapper);
+		return scrollTop - wrapperTop - headerHeight;
 	}
 
 	function getEstimatedItemSize() {
