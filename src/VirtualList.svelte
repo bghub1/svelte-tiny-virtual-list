@@ -129,8 +129,10 @@
 		if (mounted) {
 			if (scrollWrapper === document.body) {
 				window.removeEventListener('scroll', handleScroll);
+				window.removeEventListener('resize', handleScroll);
 			} else {
 				scrollWrapper.removeEventListener('scroll', handleScroll);
+				scrollWrapper.removeEventListener('resize', handleScroll);
 			}
 		}
 	});
@@ -225,8 +227,10 @@
 		
 		if (scrollWrapper === document.body) {
 			window.addEventListener('scroll', handleScroll);
+			window.addEventListener('resize', handleScroll);
 		} else {
 			scrollWrapper.addEventListener('scroll', handleScroll);
+			scrollWrapper.addEventListener('resize', handleScroll);
 		}
 	}
 
