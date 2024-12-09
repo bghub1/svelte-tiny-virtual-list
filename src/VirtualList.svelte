@@ -118,9 +118,10 @@
 
 		mounted = true;
 
-		header = wrapper.querySelector('[slot="header"]');
-
-		if (header) headerHeight = header.offsetHeight;
+		if (wrapper) {
+			header = wrapper.querySelector('[slot="header"]');
+			if (header) headerHeight = header.offsetHeight;
+		}
 
 		containerPropUpdated();
 
