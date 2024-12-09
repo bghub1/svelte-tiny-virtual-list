@@ -264,18 +264,18 @@
 		const totalSize = sizeAndPositionManager.getTotalSize();
 		
 		if (scrollDirection === DIRECTION.VERTICAL) {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
+			wrapperStyle = `height:${height ? height + typeof width === 'number' ? 'px' : '' : '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:100%;position:relative;`;
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;position:absolute;`;
 			}
 		} else {
-			wrapperStyle = `height:${height ? height + 'px' : '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
+			wrapperStyle = `height:${height ? height + typeof width === 'number' ? 'px' : '': '100%'};width:${width}${typeof width === 'number' ? 'px' : ''};`;
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:${totalSize}px;`;
 			} else {
-				innerStyle = `min-height:100%;width:${totalSize}px;`;
+				innerStyle = `min-height:100%;width:${totalSize}px;position:absolute;`;
 			}
 		}
 
