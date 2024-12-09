@@ -275,7 +275,7 @@
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:100%;position:relative;`;
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;position:absolute;`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;${height ? 'position:absolute;' : ''}`;
 			}
 		} else {
 			const heightUnit = typeof height === 'number' ? 'px' : '';
@@ -285,7 +285,7 @@
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:${totalSize}px;`;
 			} else {
-				innerStyle = `min-height:100%;width:${totalSize}px;position:absolute;`;
+				innerStyle = `min-height:100%;width:${totalSize}px;${height ? 'position:absolute;' : ''}`;
 			}
 		}
 
