@@ -421,45 +421,42 @@
 	}
 
 	function getStyle(index, sticky) {
-		const cacheKey = `${index}-${sticky}`;
-		if (styleCache[cacheKey]) return styleCache[cacheKey];
+		if (styleCache[index]) return styleCache[index];
 		
-		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);
-		
-		const px = 'px';
+		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);		
 		let style, expandStyle;
 
 		if (mode === WRAPPER_MODE.TABLE) {
-			style = `height:${size}${px};`;
-			expandStyle = `height:${expandSize}${px};`;
+			style = `height:${size}px;`;
+			expandStyle = `height:${expandSize}px;`;
 
 			if (sticky) {
-				style += 'position:sticky;z-index:1;top:0;';
-				expandStyle += 'position:sticky;z-index:1;top:0;';
+				style += `position:sticky;z-index:1;top:0;`;
+				expandStyle += `position:sticky;z-index:1;top:0;`;
 			}
 		} else {
 			if (scrollDirection === DIRECTION.VERTICAL) {
 				style = sticky 
-					? `left:0;width:100%;height:${size}${px};position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${offset}${px};margin-bottom:${-(offset + size)}${px};`
-					: `left:0;width:100%;height:${size}${px};position:absolute;top:${offset}${px};`;
-					
+					? `height:${size}px;position:sticky;top:0;z-index:1;transform:translateY(${offset}px);`
+					: `height:${size}px;position:absolute;transform:translateY(${offset}px);`;
+				
 				expandStyle = sticky
-					? `left:0;width:100%;height:${expandSize}${px};position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${expandOffset}${px};margin-bottom:${-(expandOffset + expandSize)}${px};`
-					: `left:0;width:100%;height:${expandSize}${px};position:absolute;top:${expandOffset}${px};`;
+					? `height:${expandSize}px;position:sticky;top:0;z-index:1;transform:translateY(${expandOffset}px);`
+					: `height:${expandSize}px;position:absolute;transform:translateY(${expandOffset}px);`;
 			} else {
 				style = sticky
-					? `top:0;width:${size}${px};position:sticky;z-index:1;left:0;margin-left:${offset}${px};margin-right:${-(offset + size)}${px};`
-					: `top:0;width:${size}${px};position:absolute;height:100%;left:${offset}${px};`;
-					
+					? `width:${size}px;position:sticky;left:0;z-index:1;transform:translateX(${offset}px);`
+					: `width:${size}px;position:absolute;transform:translateX(${offset}px);`;
+				
 				expandStyle = sticky
-					? `top:0;width:${expandSize}${px};position:sticky;z-index:1;left:0;margin-left:${expandOffset}${px};margin-right:${-(expandOffset + expandSize)}${px};`
-					: `top:0;width:${expandSize}${px};position:absolute;height:100%;left:${expandOffset}${px};`;
+					? `width:${expandSize}px;position:sticky;left:0;z-index:1;transform:translateX(${expandOffset}px);`
+					: `width:${expandSize}px;position:absolute;transform:translateX(${expandOffset}px);`;
 			}
 		}
 
-		return styleCache[cacheKey] = {
-			style,
-			expandStyle,
+		return styleCache[index] = {
+			style: style + 'will-change:transform;backface-visibility:hidden;',
+			expandStyle: expandStyle + 'will-change:transform;backface-visibility:hidden;'
 		};
 	}
 
@@ -481,13 +478,6 @@
 			currentElement = currentElement.offsetParent;
 		}
 		return distance;
-	}
-
-	// Clear style cache when important props change
-	$: {
-		if (mounted && (scrollDirection || mode || itemSize || expandItemSize)) {
-			styleCache = {};
-		}
 	}
 </script>
 
@@ -548,11 +538,15 @@
 	.virtual-list-wrapper {
 		will-change: transform;
 		-webkit-overflow-scrolling: touch;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 
 	.virtual-list-inner {
 		position: relative;
 		width: 100%;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 
 	table.virtual-list-inner {
