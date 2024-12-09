@@ -45,6 +45,7 @@
 	export let mode: WrapperMode = 'div';
 
 	let expandItems: boolean[] = expandItemSize !== 0 ? new Array(items.length || itemCount).fill(false) : [];
+
 	export function onClick(index) {
 		if (expandItemSize === 0) return;
 		expandItems[index] = !expandItems[index];
@@ -93,17 +94,17 @@
 	let containerSize = 0;
 
 	$: {
-		/* listen to updates: */ scrollToIndex, scrollToAlignment, scrollOffset, itemCount, itemSize, expandItems, expandItemSize, estimatedItemSize, estimatedExpandItemSize, container;
+		/* listen to updates: */mounted, scrollToIndex, scrollToAlignment, scrollOffset, itemCount, itemSize, expandItems, expandItemSize, estimatedItemSize, estimatedExpandItemSize, container;
 		propsUpdated();
 	}
 
 	$: {
-		/* listen to updates: */ state;
+		/* listen to updates: */ mounted, state;
 		stateUpdated();
 	}
 
 	$: {
-		/* listen to updates: */ height, width, stickyIndices;
+		/* listen to updates: */ mounted,height, width, stickyIndices;
 		if (mounted) recomputeSizes(0); // call scroll.reset;
 	}
 
@@ -115,13 +116,13 @@
 			height = scaleToParentElement.clientHeight;
 		}
 
+		
+		header = wrapper.querySelector('[slot="header"]');
+		
+		if (header) headerHeight = header.offsetHeight;
+		
 		mounted = true;
-
-		if (wrapper) {
-			header = wrapper.querySelector('[slot="header"]');
-			if (header) headerHeight = header.offsetHeight;
-		}
-
+		
 		containerPropUpdated();
 
 		if (scrollOffset != null) {
@@ -132,7 +133,6 @@
 	});
 
 	onDestroy(() => {
-		
 		if (mounted) {
 			if (scrollWrapper === document.body) {
 				window.removeEventListener('scroll', handleScroll);
@@ -205,7 +205,6 @@
 	}
 
 	function containerPropUpdated() {
-		console.log('Container:', container);
 		if (prevProps.container && scrollWrapper) {
 			scrollWrapper.classList.remove("virtual-list-container");
 			if (originalHeight) {
@@ -216,7 +215,6 @@
 		
 		if (container) {
 			scrollWrapper = document.querySelector(container);
-			console.log('ScrollWrapper:', scrollWrapper);
 		}
 		
 		if (scrollWrapper) {
@@ -226,19 +224,16 @@
 		} else {
 			if ((scrollDirection === DIRECTION.VERTICAL && height) || (scrollDirection === DIRECTION.HORIZONTAL && width)) {
 				scrollWrapper = wrapper;
+				//scrollWrapper.style.setProperty("overflow", "auto", "important");
 			} else {
 				scrollWrapper = document.querySelector("body");
 			}
 		}
 		
-		if (scrollWrapper) {
-			if (scrollWrapper === document.body) {
-				window.addEventListener('scroll', handleScroll);
-			} else {
-				scrollWrapper.addEventListener('scroll', handleScroll);
-			}
+		if (scrollWrapper === document.body) {
+			window.addEventListener('scroll', handleScroll);
 		} else {
-			console.error('ScrollWrapper is null, cannot add event listener');
+			scrollWrapper.addEventListener('scroll', handleScroll);
 		}
 	}
 
@@ -481,10 +476,9 @@
 	}
 </script>
 
-{#if mounted}
-	<div bind:this={wrapper} class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode}" style={wrapperStyle}>
-		<slot name="header" />
-
+<div bind:this={wrapper} class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode}" style={wrapperStyle}>
+	<slot name="header" />
+	{#if mounted}
 		{#if mode === WRAPPER_MODE.DIV}
 			<div class="virtual-list-inner" style={innerStyle}>
 				{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
@@ -530,10 +524,10 @@
 				</tbody>
 			</table>
 		{/if}
+	{/if}
 
-		<slot name="footer" />
-	</div>
-{/if}
+	<slot name="footer" />
+</div>
 
 <style>
 	.virtual-list-wrapper {
