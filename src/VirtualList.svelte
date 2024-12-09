@@ -421,46 +421,43 @@
 	}
 
 	function getStyle(index, sticky) {
-		if (styleCache[index]) return styleCache[index];
+		const cacheKey = `${index}-${sticky}`;
+		if (styleCache[cacheKey]) return styleCache[cacheKey];
 		
-		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);		
+		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);
+		
+		const px = 'px';
 		let style, expandStyle;
 
 		if (mode === WRAPPER_MODE.TABLE) {
-			style = `height:${size}px;`;
-			expandStyle = `height:${expandSize}px;`;
+			style = `height:${size}${px};`;
+			expandStyle = `height:${expandSize}${px};`;
 
 			if (sticky) {
-				style += `position:sticky;z-index:1;top:0;`;
-				expandStyle += `position:sticky;z-index:1;top:0;`;
+				style += 'position:sticky;z-index:1;top:0;';
+				expandStyle += 'position:sticky;z-index:1;top:0;';
 			}
 		} else {
 			if (scrollDirection === DIRECTION.VERTICAL) {
-				style = `left:0;width:100%;height:${size}px;`;
-				expandStyle = `left:0;width:100%;height:${expandSize}px;`;
-
-				if (sticky) {
-					style += `position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${offset}px;margin-bottom:${-(offset + size)}px;`;
-					expandStyle += `position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${expandOffset}px;margin-bottom:${-(expandOffset + expandSize)}px;`;
-				} else {
-					style += `position:absolute;top:${offset}px;`;
-					expandStyle += `position:absolute;top:${expandOffset}px;`;
-				}
+				style = sticky 
+					? `left:0;width:100%;height:${size}${px};position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${offset}${px};margin-bottom:${-(offset + size)}${px};`
+					: `left:0;width:100%;height:${size}${px};position:absolute;top:${offset}${px};`;
+					
+				expandStyle = sticky
+					? `left:0;width:100%;height:${expandSize}${px};position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${expandOffset}${px};margin-bottom:${-(expandOffset + expandSize)}${px};`
+					: `left:0;width:100%;height:${expandSize}${px};position:absolute;top:${expandOffset}${px};`;
 			} else {
-				style = `top:0;width:${size}px;`;
-				expandStyle = `top:0;width:${expandSize}px;`;
-
-				if (sticky) {
-					style += `position:sticky;z-index:1;left:0;margin-left:${offset}px;margin-right:${-(offset + size)}px;`;
-					expandStyle += `position:sticky;z-index:1;left:0;margin-left:${expandOffset}px;margin-right:${-(expandOffset + expandSize)}px;`;
-				} else {
-					style += `position:absolute;height:100%;left:${offset}px;`;
-					expandStyle += `position:absolute;height:100%;left:${expandOffset}px;`;
-				}
+				style = sticky
+					? `top:0;width:${size}${px};position:sticky;z-index:1;left:0;margin-left:${offset}${px};margin-right:${-(offset + size)}${px};`
+					: `top:0;width:${size}${px};position:absolute;height:100%;left:${offset}${px};`;
+					
+				expandStyle = sticky
+					? `top:0;width:${expandSize}${px};position:sticky;z-index:1;left:0;margin-left:${expandOffset}${px};margin-right:${-(expandOffset + expandSize)}${px};`
+					: `top:0;width:${expandSize}${px};position:absolute;height:100%;left:${expandOffset}${px};`;
 			}
 		}
 
-		return styleCache[index] = {
+		return styleCache[cacheKey] = {
 			style,
 			expandStyle,
 		};
@@ -484,6 +481,13 @@
 			currentElement = currentElement.offsetParent;
 		}
 		return distance;
+	}
+
+	// Clear style cache when important props change
+	$: {
+		if (mounted && (scrollDirection || mode || itemSize || expandItemSize)) {
+			styleCache = {};
+		}
 	}
 </script>
 
