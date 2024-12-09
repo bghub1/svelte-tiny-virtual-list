@@ -127,12 +127,11 @@
 
 	onDestroy(() => {
 		if (mounted) {
+			window.removeEventListener('resize', handleScroll);
 			if (scrollWrapper === document.body) {
 				window.removeEventListener('scroll', handleScroll);
-				window.removeEventListener('resize', handleScroll);
 			} else {
 				scrollWrapper.removeEventListener('scroll', handleScroll);
-				scrollWrapper.removeEventListener('resize', handleScroll);
 			}
 		}
 	});
@@ -225,12 +224,11 @@
 			}
 		}
 		
+		window.addEventListener('resize', handleScroll);
 		if (scrollWrapper === document.body) {
 			window.addEventListener('scroll', handleScroll);
-			window.addEventListener('resize', handleScroll);
 		} else {
 			scrollWrapper.addEventListener('scroll', handleScroll);
-			scrollWrapper.addEventListener('resize', handleScroll);
 		}
 	}
 
@@ -271,11 +269,11 @@
 			const heightUnit = typeof height === 'number' ? 'px' : '';
 			const heightValue = height ? (height + heightUnit) : '100%';
 			const widthUnit = typeof width === 'number' ? 'px' : '';
-			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};`;
+			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};position:relative;overflow:hidden;`;
 			if (mode === WRAPPER_MODE.TABLE) {
 				innerStyle = `width:100%;position:relative;`;
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;${height ? 'position:absolute;' : ''}`;
+				innerStyle = `flex-direction:column;height:${totalSize}px;position:relative;`;
 			}
 		} else {
 			const heightUnit = typeof height === 'number' ? 'px' : '';
