@@ -45,7 +45,6 @@
 	export let mode: WrapperMode = 'div';
 
 	let expandItems: boolean[] = expandItemSize !== 0 ? new Array(items.length || itemCount).fill(false) : [];
-
 	export function onClick(index) {
 		if (expandItemSize === 0) return;
 		expandItems[index] = !expandItems[index];
@@ -133,6 +132,7 @@
 	});
 
 	onDestroy(() => {
+		
 		if (mounted) {
 			if (scrollWrapper === document.body) {
 				window.removeEventListener('scroll', handleScroll);
@@ -205,6 +205,7 @@
 	}
 
 	function containerPropUpdated() {
+		console.log('Container:', container);
 		if (prevProps.container && scrollWrapper) {
 			scrollWrapper.classList.remove("virtual-list-container");
 			if (originalHeight) {
@@ -215,6 +216,7 @@
 		
 		if (container) {
 			scrollWrapper = document.querySelector(container);
+			console.log('ScrollWrapper:', scrollWrapper);
 		}
 		
 		if (scrollWrapper) {
@@ -224,16 +226,19 @@
 		} else {
 			if ((scrollDirection === DIRECTION.VERTICAL && height) || (scrollDirection === DIRECTION.HORIZONTAL && width)) {
 				scrollWrapper = wrapper;
-				//scrollWrapper.style.setProperty("overflow", "auto", "important");
 			} else {
 				scrollWrapper = document.querySelector("body");
 			}
 		}
 		
-		if (scrollWrapper === document.body) {
-			window.addEventListener('scroll', handleScroll);
+		if (scrollWrapper) {
+			if (scrollWrapper === document.body) {
+				window.addEventListener('scroll', handleScroll);
+			} else {
+				scrollWrapper.addEventListener('scroll', handleScroll);
+			}
 		} else {
-			scrollWrapper.addEventListener('scroll', handleScroll);
+			console.error('ScrollWrapper is null, cannot add event listener');
 		}
 	}
 
