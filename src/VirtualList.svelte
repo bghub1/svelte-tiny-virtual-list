@@ -19,7 +19,6 @@
 
 	export let container: string = null;
 
-	export let scaleToParentElement: HTMLElement = null;
 	export let height: number | string = '';
 	export let width: number | string = '100%';
 	
@@ -111,12 +110,6 @@
 	refresh(); // Initial Load
 
 	onMount(() => {
-		if (scaleToParentElement) {
-			width = scaleToParentElement.clientWidth;
-			height = scaleToParentElement.clientHeight;
-		}
-
-		
 		header = wrapper.querySelector('[slot="header"]');
 		
 		if (header) headerHeight = header.offsetHeight;
