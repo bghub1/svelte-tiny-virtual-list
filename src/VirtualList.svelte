@@ -19,6 +19,7 @@
 
 	export let container: string = null;
 
+	export let scaleToParentElement: HTMLElement = null;
 	export let height: number | string = '';
 	export let width: number | string = '100%';
 	
@@ -110,6 +111,11 @@
 	refresh(); // Initial Load
 
 	onMount(() => {
+		if (scaleToParentElement) {
+			width = scaleToParentElement.clientWidth;
+			height = scaleToParentElement.clientHeight;
+		}
+
 		mounted = true;
 
 		header = wrapper.querySelector('[slot="header"]');
@@ -469,57 +475,59 @@
 	}
 </script>
 
-<div bind:this={wrapper} class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode}" style={wrapperStyle}>
-	<slot name="header" />
+{#if mounted}
+	<div bind:this={wrapper} class="virtual-list-wrapper overflow-x-{overflowXMode} overflow-y-{overflowYMode}" style={wrapperStyle}>
+		<slot name="header" />
 
-	{#if mode === WRAPPER_MODE.DIV}
-		<div class="virtual-list-inner" style={innerStyle}>
-			{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
-				<div style={item.style.style} class={expandItems[item.index] ? "active" : ""}>
-					<slot name="item" item={items[item.index]} index={item.index} style="height: 100%;" />
-				</div>
-				{#if expandItems[item.index]}
-					<div style={item.style.expandStyle}>
-						<slot name="expandItem" item={items[item.index]} index={item.index} style="height: 100%; overflow: hidden;" />
-					</div>
-				{/if}
-			{/each}
-		</div>
-	{:else}
-		<table class="virtual-list-inner" style={innerStyle}>
-			<thead>
-				<slot name="header-row" />
-			</thead>
-			<tbody>
-				<!-- Top spacer with explicit inline style to override the class -->
-				<tr style="height:{state.offset}px !important; min-height:{state.offset}px !important;" />
-				
+		{#if mode === WRAPPER_MODE.DIV}
+			<div class="virtual-list-inner" style={innerStyle}>
 				{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
-					<slot 
-						name="item" 
-						item={items[item.index]} 
-						index={item.index}
-						style={item.style.style}
-						class={expandItems[item.index] ? "active" : ""}
-					/>
+					<div style={item.style.style} class={expandItems[item.index] ? "active" : ""}>
+						<slot name="item" item={items[item.index]} index={item.index} style="height: 100%;" />
+					</div>
 					{#if expandItems[item.index]}
-						<slot 
-							name="expandItem" 
-							item={items[item.index]} 
-							index={item.index}
-							style={item.style.expandStyle}
-						/>
+						<div style={item.style.expandStyle}>
+							<slot name="expandItem" item={items[item.index]} index={item.index} style="height: 100%; overflow: hidden;" />
+						</div>
 					{/if}
 				{/each}
+			</div>
+		{:else}
+			<table class="virtual-list-inner" style={innerStyle}>
+				<thead>
+					<slot name="header-row" />
+				</thead>
+				<tbody>
+					<!-- Top spacer with explicit inline style to override the class -->
+					<tr style="height:{state.offset}px !important; min-height:{state.offset}px !important;" />
+					
+					{#each visibleItems as item (getKey ? getKey(item.index) : item.index)}
+						<slot 
+							name="item" 
+							item={items[item.index]} 
+							index={item.index}
+							style={item.style.style}
+							class={expandItems[item.index] ? "active" : ""}
+						/>
+						{#if expandItems[item.index]}
+							<slot 
+								name="expandItem" 
+								item={items[item.index]} 
+								index={item.index}
+								style={item.style.expandStyle}
+							/>
+						{/if}
+					{/each}
 
-				<!-- Bottom spacer with explicit inline style -->
-				<tr style="height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important; min-height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important;" />
-			</tbody>
-		</table>
-	{/if}
+					<!-- Bottom spacer with explicit inline style -->
+					<tr style="height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important; min-height:{Math.max(0, sizeAndPositionManager.getTotalSize() - state.offset - containerSize)}px !important;" />
+				</tbody>
+			</table>
+		{/if}
 
-	<slot name="footer" />
-</div>
+		<slot name="footer" />
+	</div>
+{/if}
 
 <style>
 	.virtual-list-wrapper {
