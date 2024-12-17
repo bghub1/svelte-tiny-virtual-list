@@ -39,7 +39,14 @@
 	export let scrollToAlignment: Alignment = null;
 	export let scrollToBehaviour: ScrollBehaviour = 'instant';
 
-	export let overscanCount: number = 3;
+	export let overscanCount: number = 10;
+	export let overscanMultiplier: number = 2;
+	export let preloadScreens: number = 2;
+	
+	let lastScrollDirection = 0;
+	let scrollVelocity = 0;
+	let lastScrollTimestamp = 0;
+	let rafId = null;
 
 	export let mode: WrapperMode = 'div';
 
@@ -134,6 +141,9 @@
 		if (mounted) {
 			if (scrollTimeout) {
 				clearTimeout(scrollTimeout);
+			}
+			if (rafId) {
+				cancelAnimationFrame(rafId);
 			}
 			window.removeEventListener('resize', handleScroll);
 			if (scrollWrapper === document.body) {
@@ -376,7 +386,24 @@
 		if (state.offset === currentOffset) return;
 		
 		const now = Date.now();
-		const timeDiff = now - lastScrollTime;
+		const timeDiff = Math.max(1, now - lastScrollTime);
+		
+		// Calculate scroll velocity and direction
+		const delta = currentOffset - lastScrollOffset;
+		const newDirection = Math.sign(delta);
+		scrollVelocity = Math.abs(delta) / timeDiff;
+		
+		// Adjust overscan based on scroll velocity
+		const dynamicOverscan = Math.min(50, Math.max(overscanCount, 
+			Math.ceil(overscanCount * (1 + scrollVelocity * overscanMultiplier))
+		));
+		
+		// If direction changed, immediately update to prevent blank areas
+		if (newDirection !== lastScrollDirection) {
+			lastScrollDirection = newDirection;
+			updateScrollState(currentOffset, dynamicOverscan);
+			return;
+		}
 		
 		if (timeDiff < SCROLL_DEBOUNCE) {
 			if (scrollTimeout) {
@@ -384,32 +411,83 @@
 			}
 			
 			scrollTimeout = setTimeout(() => {
-				scrollTimeout = null;
-				lastScrollTime = Date.now();
-				updateScrollState(currentOffset);
-			}, SCROLL_DEBOUNCE - timeDiff);
+					scrollTimeout = null;
+					lastScrollTime = Date.now();
+					updateScrollState(currentOffset, dynamicOverscan);
+				}, SCROLL_DEBOUNCE - timeDiff);
 			
 			return;
 		}
 		
 		lastScrollTime = now;
-		updateScrollState(currentOffset);
+		updateScrollState(currentOffset, dynamicOverscan);
 	}
 
-	function updateScrollState(currentOffset) {
+	function updateScrollState(currentOffset, dynamicOverscan) {
 		if (Math.abs(currentOffset - lastScrollOffset) < 1) return;
 		
 		lastScrollOffset = currentOffset;
 		
-		requestAnimationFrame(() => {
+		if (rafId) {
+			cancelAnimationFrame(rafId);
+		}
+		
+		rafId = requestAnimationFrame(() => {
+			rafId = null;
 			state = {
 				offset: currentOffset,
 				scrollChangeReason: SCROLL_CHANGE_REASON.OBSERVED,
 			};
-
+			
+			const extraOverscan = Math.ceil(containerSize * preloadScreens);
+			const { start, stop } = sizeAndPositionManager.getVisibleRange(
+				containerSize + (extraOverscan * 2), // Add extra space for preloading
+				Math.max(0, currentOffset - extraOverscan), // Preload above
+				dynamicOverscan
+			);
+			
+			updateVisibleItems(start, stop);
+			
 			dispatchEvent('afterScroll', {
 				offset: currentOffset,
 			});
+		});
+	}
+
+	function updateVisibleItems(start, stop) {
+		if (start === undefined || stop === undefined) return;
+		
+		let updatedItems = [];
+		const hasStickyIndices = stickyIndices != null && stickyIndices.length !== 0;
+		
+		// Add sticky items first
+		if (hasStickyIndices) {
+			for (let i = 0; i < stickyIndices.length; i++) {
+				const index = stickyIndices[i];
+				updatedItems.push({
+					index,
+					style: getStyle(index, true),
+				});
+			}
+		}
+		
+		// Add visible and overscan items
+		for (let index = start; index <= stop; index++) {
+			if (hasStickyIndices && stickyIndices.includes(index)) {
+				continue;
+			}
+			
+			updatedItems.push({
+				index,
+				style: getStyle(index, false),
+			});
+		}
+		
+		visibleItems = updatedItems;
+		
+		dispatchEvent('itemsUpdated', {
+			start,
+			end: stop,
 		});
 	}
 
@@ -459,10 +537,16 @@
 	}
 
 	function getStyle(index, sticky) {
-		if (styleCache[index]) return styleCache[index];
+		const cacheKey = `${index}-${sticky}`;
+		if (styleCache[cacheKey]) return styleCache[cacheKey];
 		
 		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);		
 		let style, expandStyle;
+		
+		// Use transform for better performance
+		const transform = scrollDirection === DIRECTION.VERTICAL ? 
+			`transform: translate3d(0, ${offset}px, 0);` :
+			`transform: translate3d(${offset}px, 0, 0);`;
 
 		if (mode === WRAPPER_MODE.TABLE) {
 			style = `height:${size}px;`;
@@ -474,31 +558,25 @@
 			}
 		} else {
 			if (scrollDirection === DIRECTION.VERTICAL) {
-				style = `left:0;width:100%;height:${size}px;`;
-				expandStyle = `left:0;width:100%;height:${expandSize}px;`;
+				style = `left:0;width:100%;height:${size}px;position:absolute;${transform}`;
+				expandStyle = `left:0;width:100%;height:${expandSize}px;position:absolute;${transform}`;
 
 				if (sticky) {
-					style += `position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${offset}px;margin-bottom:${-(offset + size)}px;`;
-					expandStyle += `position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${expandOffset}px;margin-bottom:${-(expandOffset + expandSize)}px;`;
-				} else {
-					style += `position:absolute;top:${offset}px;`;
-					expandStyle += `position:absolute;top:${expandOffset}px;`;
+					style = `left:0;width:100%;height:${size}px;position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${offset}px;margin-bottom:${-(offset + size)}px;`;
+					expandStyle = `left:0;width:100%;height:${expandSize}px;position:sticky;flex-grow:0;z-index:1;top:0;margin-top:${expandOffset}px;margin-bottom:${-(expandOffset + expandSize)}px;`;
 				}
 			} else {
-				style = `top:0;width:${size}px;`;
-				expandStyle = `top:0;width:${expandSize}px;`;
+				style = `top:0;width:${size}px;position:absolute;${transform}`;
+				expandStyle = `top:0;width:${expandSize}px;position:absolute;${transform}`;
 
 				if (sticky) {
-					style += `position:sticky;z-index:1;left:0;margin-left:${offset}px;margin-right:${-(offset + size)}px;`;
-					expandStyle += `position:sticky;z-index:1;left:0;margin-left:${expandOffset}px;margin-right:${-(expandOffset + expandSize)}px;`;
-				} else {
-					style += `position:absolute;height:100%;left:${offset}px;`;
-					expandStyle += `position:absolute;height:100%;left:${expandOffset}px;`;
+					style = `top:0;width:${size}px;position:sticky;z-index:1;left:0;margin-left:${offset}px;margin-right:${-(offset + size)}px;`;
+					expandStyle = `top:0;width:${expandSize}px;position:sticky;z-index:1;left:0;margin-left:${expandOffset}px;margin-right:${-(expandOffset + expandSize)}px;`;
 				}
 			}
 		}
 
-		return styleCache[index] = {
+		return styleCache[cacheKey] = {
 			style,
 			expandStyle,
 		};
