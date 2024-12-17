@@ -92,6 +92,11 @@
 
 	let containerSize = 0;
 
+	let scrollTimeout = null;
+	let lastScrollTime = 0;
+	let lastScrollOffset = 0;
+	const SCROLL_DEBOUNCE = 16; // ~60fps
+
 	$: {
 		/* listen to updates: */mounted, scrollToIndex, scrollToAlignment, scrollOffset, itemCount, itemSize, expandItems, expandItemSize, estimatedItemSize, estimatedExpandItemSize, container;
 		propsUpdated();
@@ -127,6 +132,9 @@
 
 	onDestroy(() => {
 		if (mounted) {
+			if (scrollTimeout) {
+				clearTimeout(scrollTimeout);
+			}
 			window.removeEventListener('resize', handleScroll);
 			if (scrollWrapper === document.body) {
 				window.removeEventListener('scroll', handleScroll);
@@ -256,7 +264,10 @@
 	function refresh() {
 		const { offset } = state;
 		
-		containerSize = getVisibleHeight(scrollWrapper === document.body ? wrapper : scrollWrapper);
+		const newContainerSize = getVisibleHeight(scrollWrapper === document.body ? wrapper : scrollWrapper);
+		if (Math.abs(newContainerSize - containerSize) > 1) {
+			containerSize = newContainerSize;
+		}
 		
 		const { start, stop } = sizeAndPositionManager.getVisibleRange(
 			containerSize,
@@ -267,25 +278,27 @@
 		let updatedItems = [];
 		const totalSize = sizeAndPositionManager.getTotalSize();
 		
-		if (scrollDirection === DIRECTION.VERTICAL) {
-			const heightUnit = typeof height === 'number' ? 'px' : '';
-			const heightValue = height ? (height + heightUnit) : '100%';
-			const widthUnit = typeof width === 'number' ? 'px' : '';
-			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};position:relative;overflow:hidden;`;
-			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `width:100%;position:relative;`;
+		if (!wrapperStyle) {
+			if (scrollDirection === DIRECTION.VERTICAL) {
+				const heightUnit = typeof height === 'number' ? 'px' : '';
+				const heightValue = height ? (height + heightUnit) : '100%';
+				const widthUnit = typeof width === 'number' ? 'px' : '';
+				wrapperStyle = `height:${heightValue};width:${width}${widthUnit};position:relative;overflow:hidden;`;
+				if (mode === WRAPPER_MODE.TABLE) {
+					innerStyle = `width:100%;position:relative;`;
+				} else {
+					innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
+				}
 			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
-			}
-		} else {
-			const heightUnit = typeof height === 'number' ? 'px' : '';
-			const heightValue = height ? (height + heightUnit) : '100%';
-			const widthUnit = typeof width === 'number' ? 'px' : '';
-			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};`;
-			if (mode === WRAPPER_MODE.TABLE) {
-				innerStyle = `width:${totalSize}px;`;
-			} else {
-				innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
+				const heightUnit = typeof height === 'number' ? 'px' : '';
+				const heightValue = height ? (height + heightUnit) : '100%';
+				const widthUnit = typeof width === 'number' ? 'px' : '';
+				wrapperStyle = `height:${heightValue};width:${width}${widthUnit};`;
+				if (mode === WRAPPER_MODE.TABLE) {
+					innerStyle = `width:${totalSize}px;`;
+				} else {
+					innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
+				}
 			}
 		}
 
@@ -362,6 +375,32 @@
 		const currentOffset = getWrapperOffset();
 		if (state.offset === currentOffset) return;
 		
+		const now = Date.now();
+		const timeDiff = now - lastScrollTime;
+		
+		if (timeDiff < SCROLL_DEBOUNCE) {
+			if (scrollTimeout) {
+				return;
+			}
+			
+			scrollTimeout = setTimeout(() => {
+				scrollTimeout = null;
+				lastScrollTime = Date.now();
+				updateScrollState(currentOffset);
+			}, SCROLL_DEBOUNCE - timeDiff);
+			
+			return;
+		}
+		
+		lastScrollTime = now;
+		updateScrollState(currentOffset);
+	}
+
+	function updateScrollState(currentOffset) {
+		if (Math.abs(currentOffset - lastScrollOffset) < 1) return;
+		
+		lastScrollOffset = currentOffset;
+		
 		requestAnimationFrame(() => {
 			state = {
 				offset: currentOffset,
@@ -370,7 +409,6 @@
 
 			dispatchEvent('afterScroll', {
 				offset: currentOffset,
-				event,
 			});
 		});
 	}
