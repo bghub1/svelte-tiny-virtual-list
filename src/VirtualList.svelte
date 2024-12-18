@@ -94,6 +94,7 @@
 		estimatedItemSize,
 		estimatedExpandItemSize,
 		container,
+		items,
 	};
 
 	let styleCache = {};
@@ -118,8 +119,32 @@
 	}
 
 	$: {
-		/* listen to updates: */ mounted,height, width, stickyIndices;
+		/* listen to updates: */ mounted, height, width, stickyIndices;
 		if (mounted) recomputeSizes(0); // call scroll.reset;
+	}
+
+	$: {
+		if (mounted && items) {
+			if (itemCount === prevProps.items?.length) {
+				itemCount = items.length;
+			}
+			
+			if (expandItemSize !== 0 && expandItems.length !== items.length) {
+				expandItems = new Array(items.length).fill(false);
+			}
+			
+			sizeAndPositionManager.updateConfig({
+				itemCount,
+				itemSize,
+				expandItems,
+				expandItemSize,
+				estimatedItemSize: getEstimatedItemSize(),
+				estimatedExpandItemSize: getEstimatedExpandItemSize(),
+			});
+			
+			styleCache = {};
+			refresh();
+		}
 	}
 
 	refresh(); // Initial Load
@@ -171,7 +196,8 @@
 				  prevProps.expandItems !== expandItems || 
 				  prevProps.expandItemSize !== expandItemSize || 
 			      prevProps.estimatedItemSize !== estimatedItemSize ||
-				  prevProps.estimatedExpandItemSize !== estimatedExpandItemSize;
+				  prevProps.estimatedExpandItemSize !== estimatedExpandItemSize ||
+				  prevProps.items !== items;
 		const containerPropChanged = prevProps.container !== container;
 
 		if (itemPropsHaveChanged) {
@@ -219,6 +245,7 @@
 			estimatedItemSize,
 			estimatedExpandItemSize,
 			container,
+			items,
 		};
 	}
 
