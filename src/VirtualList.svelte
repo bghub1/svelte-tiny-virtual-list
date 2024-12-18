@@ -108,9 +108,42 @@
 	let lastScrollOffset = 0;
 	const SCROLL_DEBOUNCE = 16; // ~60fps
 
+	// Track items length separately to avoid reacting to internal item changes
+	let prevItemsLength = items.length;
+
 	$: {
 		/* listen to updates: */mounted, scrollToIndex, scrollToAlignment, scrollOffset, itemCount, itemSize, expandItems, expandItemSize, estimatedItemSize, estimatedExpandItemSize, container;
 		propsUpdated();
+	}
+
+	// Ensure items is always an array
+	$: items = Array.isArray(items) ? items : [];
+	
+	// Ensure itemCount is valid
+	$: itemCount = Math.max(0, itemCount);
+
+	// Separate reactive statement for items array changes
+	$: if (mounted && items && (items.length !== prevItemsLength || items !== prevProps.items)) {
+		prevItemsLength = items.length;
+		if (itemCount === prevProps.items?.length) {
+			itemCount = items.length;
+		}
+		
+		if (expandItemSize !== 0 && expandItems.length !== items.length) {
+			expandItems = new Array(items.length).fill(false);
+		}
+		
+		sizeAndPositionManager.updateConfig({
+			itemCount: Math.max(0, itemCount), // Ensure positive
+			itemSize,
+			expandItems,
+			expandItemSize,
+			estimatedItemSize: getEstimatedItemSize(),
+			estimatedExpandItemSize: getEstimatedExpandItemSize(),
+		});
+		
+		styleCache = {};
+		refresh();
 	}
 
 	$: {
@@ -121,30 +154,6 @@
 	$: {
 		/* listen to updates: */ mounted, height, width, stickyIndices;
 		if (mounted) recomputeSizes(0); // call scroll.reset;
-	}
-
-	$: {
-		if (mounted && items) {
-			if (itemCount === prevProps.items?.length) {
-				itemCount = items.length;
-			}
-			
-			if (expandItemSize !== 0 && expandItems.length !== items.length) {
-				expandItems = new Array(items.length).fill(false);
-			}
-			
-			sizeAndPositionManager.updateConfig({
-				itemCount,
-				itemSize,
-				expandItems,
-				expandItemSize,
-				estimatedItemSize: getEstimatedItemSize(),
-				estimatedExpandItemSize: getEstimatedExpandItemSize(),
-			});
-			
-			styleCache = {};
-			refresh();
-		}
 	}
 
 	refresh(); // Initial Load
@@ -378,17 +387,19 @@
 	}
 
 	function scrollTo(value) {
+		if (!scrollWrapper || value === undefined || value === null) return;
+		
 		if (scrollDirection === DIRECTION.VERTICAL && !height) {
-			value += wrapper.offsetTop;
+			value += wrapper?.offsetTop || 0;
 		}
 
 		if ('scroll' in scrollWrapper) {
 			scrollWrapper.scroll({
-				[SCROLL_PROP[scrollDirection]]: value,
-				behavior:                       scrollToBehaviour,
+				[SCROLL_PROP[scrollDirection]]: Math.max(0, value),
+				behavior: scrollToBehaviour,
 			});
 		} else {
-			scrollWrapper[SCROLL_PROP_LEGACY[scrollDirection]] = value;
+			scrollWrapper[SCROLL_PROP_LEGACY[scrollDirection]] = Math.max(0, value);
 		}
 	}
 
@@ -505,7 +516,11 @@
 	}
 
 	function updateVisibleItems(start, stop) {
-		if (start === undefined || stop === undefined) return;
+		if (start === undefined || stop === undefined || !items) return;
+		
+		// Ensure valid range
+		start = Math.max(0, start);
+		stop = Math.min(items.length - 1, stop);
 		
 		let updatedItems = [];
 		const hasStickyIndices = stickyIndices != null && stickyIndices.length !== 0;
@@ -514,18 +529,19 @@
 		if (hasStickyIndices) {
 			for (let i = 0; i < stickyIndices.length; i++) {
 				const index = stickyIndices[i];
-				updatedItems.push({
-					index,
-					style: getStyle(index, true),
-				});
+				if (index >= 0 && index < items.length) {
+					updatedItems.push({
+						index,
+						style: getStyle(index, true),
+					});
+				}
 			}
 		}
 		
 		// Add visible and overscan items
 		for (let index = start; index <= stop; index++) {
-			if (hasStickyIndices && stickyIndices.includes(index)) {
-				continue;
-			}
+			if (index < 0 || index >= items.length) continue;
+			if (hasStickyIndices && stickyIndices.includes(index)) continue;
 			
 			updatedItems.push({
 				index,
@@ -587,10 +603,14 @@
 	}
 
 	function getStyle(index, sticky) {
+		if (index < 0 || index >= items.length) return null;
+		
 		const cacheKey = `${index}-${sticky}`;
 		if (styleCache[cacheKey]) return styleCache[cacheKey];
 		
 		const { size, offset, expandSize, expandOffset } = sizeAndPositionManager.getSizeAndPositionForIndex(index);		
+		if (size === undefined || offset === undefined) return null;
+		
 		let style, expandStyle;
 
 		if (mode === WRAPPER_MODE.TABLE) {
