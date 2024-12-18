@@ -142,8 +142,15 @@
 			estimatedExpandItemSize: getEstimatedExpandItemSize(),
 		});
 		
+		// Clear caches and force complete refresh
 		styleCache = {};
+		wrapperStyle = ''; // Clear wrapper style to force recalculation
+		innerStyle = ''; // Clear inner style to force recalculation
 		refresh();
+		
+		// Force update container size and total height
+		const totalSize = sizeAndPositionManager.getTotalSize();
+		updateContainerSize(totalSize);
 	}
 
 	$: {
@@ -330,46 +337,26 @@
 		let updatedItems = [];
 		const totalSize = sizeAndPositionManager.getTotalSize();
 		
-		if (!wrapperStyle) {
-			if (scrollDirection === DIRECTION.VERTICAL) {
-				const heightUnit = typeof height === 'number' ? 'px' : '';
-				const heightValue = height ? (height + heightUnit) : '100%';
-				const widthUnit = typeof width === 'number' ? 'px' : '';
-				wrapperStyle = `height:${heightValue};width:${width}${widthUnit};position:relative;overflow:hidden;`;
-				if (mode === WRAPPER_MODE.TABLE) {
-					innerStyle = `width:100%;position:relative;`;
-				} else {
-					innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
-				}
-			} else {
-				const heightUnit = typeof height === 'number' ? 'px' : '';
-				const heightValue = height ? (height + heightUnit) : '100%';
-				const widthUnit = typeof width === 'number' ? 'px' : '';
-				wrapperStyle = `height:${heightValue};width:${width}${widthUnit};`;
-				if (mode === WRAPPER_MODE.TABLE) {
-					innerStyle = `width:${totalSize}px;`;
-				} else {
-					innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
-				}
-			}
-		}
+		// Always update container size on refresh
+		updateContainerSize(totalSize);
 
 		const hasStickyIndices = stickyIndices != null && stickyIndices.length !== 0;
 		if (hasStickyIndices) {
 			for (let i = 0; i < stickyIndices.length; i++) {
 				const index = stickyIndices[i];
-				updatedItems.push({
-					index,
-					style: getStyle(index, true),
-				});
+				if (index >= 0 && index < items.length) {
+					updatedItems.push({
+						index,
+						style: getStyle(index, true),
+					});
+				}
 			}
 		}
 
 		if (start !== undefined && stop !== undefined) {
 			for (let index = start; index <= stop; index++) {
-				if (hasStickyIndices && stickyIndices.includes(index)) {
-					continue;
-				}
+				if (index < 0 || index >= items.length) continue;
+				if (hasStickyIndices && stickyIndices.includes(index)) continue;
 
 				updatedItems.push({
 					index,
@@ -380,6 +367,7 @@
 			dispatchEvent('itemsUpdated', {
 				start,
 				end: stop,
+				totalSize,
 			});
 		}
 
@@ -671,6 +659,30 @@
 			currentElement = currentElement.offsetParent;
 		}
 		return distance;
+	}
+
+	function updateContainerSize(totalSize) {
+		if (scrollDirection === DIRECTION.VERTICAL) {
+			const heightUnit = typeof height === 'number' ? 'px' : '';
+			const heightValue = height ? (height + heightUnit) : '100%';
+			const widthUnit = typeof width === 'number' ? 'px' : '';
+			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};position:relative;overflow:hidden;`;
+			if (mode === WRAPPER_MODE.TABLE) {
+				innerStyle = `width:100%;position:relative;height:${totalSize}px;`;
+			} else {
+				innerStyle = `flex-direction:column;height:${totalSize}px;width:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
+			}
+		} else {
+			const heightUnit = typeof height === 'number' ? 'px' : '';
+			const heightValue = height ? (height + heightUnit) : '100%';
+			const widthUnit = typeof width === 'number' ? 'px' : '';
+			wrapperStyle = `height:${heightValue};width:${width}${widthUnit};`;
+			if (mode === WRAPPER_MODE.TABLE) {
+				innerStyle = `width:${totalSize}px;height:100%;`;
+			} else {
+				innerStyle = `flex-direction:row;width:${totalSize}px;height:100%;${height ? 'position:absolute;' : 'position:relative;'}`;
+			}
+		}
 	}
 </script>
 
