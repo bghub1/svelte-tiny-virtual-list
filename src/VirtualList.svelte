@@ -50,7 +50,6 @@
 	let isScrolling = false;
 	let scrollEndTimeout = null;
 	const SCROLL_END_DELAY = 150;
-
 	export let mode: WrapperMode = 'div';
 
 	let expandItems: boolean[] = expandItemSize !== 0 ? new Array(items.length || itemCount).fill(false) : [];
